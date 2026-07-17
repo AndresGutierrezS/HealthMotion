@@ -1,29 +1,39 @@
 package com.example.healthmotion.presentation
 
 import android.app.Activity
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import android.widget.TextView
 import com.example.healthmotion.R
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
-import android.hardware.Sensor
-import android.hardware.SensorManager
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
 
 class MainActivity : Activity(), SensorEventListener {
+
     private lateinit var sensorManager: SensorManager
 
     private var heartRateSensor: Sensor? = null
+    private var accelerometerSensor: Sensor? = null
+    private var stepCounterSensor: Sensor? = null
+
+    private var currentHeartRate = 75
+
+    private var currentAccelX = 0f
+    private var currentAccelY = 0f
+    private var currentAccelZ = 0f
+
+    private var currentSteps = 5234
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val txtStatus = findViewById<android.widget.TextView>(
-            R.id.txtStatus
-        )
+        val txtStatus = findViewById<TextView>(R.id.txtStatus)
 
         sensorManager =
             getSystemService(SENSOR_SERVICE) as SensorManager
@@ -33,14 +43,19 @@ class MainActivity : Activity(), SensorEventListener {
                 Sensor.TYPE_HEART_RATE
             )
 
+        accelerometerSensor =
+            sensorManager.getDefaultSensor(
+                Sensor.TYPE_ACCELEROMETER
+            )
+
+        stepCounterSensor =
+            sensorManager.getDefaultSensor(
+                Sensor.TYPE_STEP_COUNTER
+            )
+
         if (heartRateSensor != null) {
 
-//            txtStatus.text = "Heart Rate disponible"
-
-            val simulatedBpm = 75
-
-            txtStatus.text =
-                "BPM: $simulatedBpm"
+            currentHeartRate = 75
 
             Log.d(
                 "HEALTHMOTION_WEAR",
@@ -63,51 +78,123 @@ class MainActivity : Activity(), SensorEventListener {
             )
         }
 
+        if (accelerometerSensor != null) {
+
+            Log.d(
+                "HEALTHMOTION_WEAR",
+                "Accelerometer disponible"
+            )
+
+            sensorManager.registerListener(
+                this,
+                accelerometerSensor,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
+
+        } else {
+
+            Log.e(
+                "HEALTHMOTION_WEAR",
+                "Accelerometer NO disponible"
+            )
+        }
+
+        if (stepCounterSensor != null) {
+
+            Log.d(
+                "HEALTHMOTION_WEAR",
+                "Step Counter disponible"
+            )
+
+        } else {
+
+            Log.e(
+                "HEALTHMOTION_WEAR",
+                "Step Counter NO disponible"
+            )
+        }
+
+        txtStatus.text = "Sensores listos"
+
         val btnSend = findViewById<Button>(R.id.btnSend)
 
         btnSend.setOnClickListener {
 
-            Log.d("HEALTHMOTION_WEAR", "Botón presionado")
+            Log.d(
+                "HEALTHMOTION_WEAR",
+                "Botón presionado"
+            )
 
             Wearable.getNodeClient(this)
                 .connectedNodes
                 .addOnSuccessListener { nodes ->
 
-                    Log.d("HEALTHMOTION_WEAR", "Nodos encontrados: ${nodes.size}")
+                    Log.d(
+                        "HEALTHMOTION_WEAR",
+                        "Nodos encontrados: ${nodes.size}"
+                    )
 
                     for (node in nodes) {
 
-                        Log.d("HEALTHMOTION_WEAR", "Enviando a nodo: ${node.displayName}")
+                        Log.d(
+                            "HEALTHMOTION_WEAR",
+                            "Enviando a nodo: ${node.displayName}"
+                        )
 
-//                        Wearable.getMessageClient(this)
-//                            .sendMessage(
-//                                node.id,
-//                                "/healthmotion",
-//                                "Hola desde HealthMotion".toByteArray()
-//                            )
-//                            .addOnSuccessListener {
-//                                Log.d("HEALTHMOTION_WEAR", "Mensaje enviado")
-//                            }
-//                            .addOnFailureListener {
-//                                Log.e("HEALTHMOTION_WEAR", "Error enviando", it)
-//                            }
                         Wearable.getDataClient(this)
                             .putDataItem(
-                                PutDataMapRequest.create("/healthmotion_test").run {
+                                PutDataMapRequest
+                                    .create("/healthmotion_test")
+                                    .run {
 
-                                    dataMap.putInt("heartRate", 75)
-                                    dataMap.putInt("steps", 5234)
-                                    dataMap.putInt("calories", 210)
-                                    dataMap.putLong("timestamp", System.currentTimeMillis())
+                                        dataMap.putInt(
+                                            "heartRate",
+                                            currentHeartRate
+                                        )
 
-                                    asPutDataRequest().setUrgent()
-                                }
+                                        dataMap.putInt(
+                                            "steps",
+                                            currentSteps
+                                        )
+
+                                        dataMap.putFloat(
+                                            "accelX",
+                                            currentAccelX
+                                        )
+
+                                        dataMap.putFloat(
+                                            "accelY",
+                                            currentAccelY
+                                        )
+
+                                        dataMap.putFloat(
+                                            "accelZ",
+                                            currentAccelZ
+                                        )
+
+                                        dataMap.putLong(
+                                            "timestamp",
+                                            System.currentTimeMillis()
+                                        )
+
+                                        asPutDataRequest()
+                                            .setUrgent()
+                                    }
                             )
                             .addOnSuccessListener {
-                                Log.d("HEALTHMOTION_WEAR", "DataItem enviado")
+
+                                Log.d(
+                                    "HEALTHMOTION_WEAR",
+                                    "DataItem enviado"
+                                )
                             }
                             .addOnFailureListener {
-                                Log.e("HEALTHMOTION_WEAR", "Error DataItem", it)
+
+                                Log.e(
+                                    "HEALTHMOTION_WEAR",
+                                    "Error DataItem",
+                                    it
+                                )
                             }
                     }
                 }
@@ -115,11 +202,6 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
-
-        Log.d(
-            "HEALTHMOTION_WEAR",
-            "onSensorChanged ejecutado"
-        )
 
         if (event?.sensor?.type == Sensor.TYPE_HEART_RATE) {
 
@@ -129,13 +211,17 @@ class MainActivity : Activity(), SensorEventListener {
                 "HEALTHMOTION_WEAR",
                 "BPM: $bpm"
             )
+        }
 
-            val txtStatus =
-                findViewById<android.widget.TextView>(
-                    R.id.txtStatus
-                )
+        if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
 
-            txtStatus.text = "BPM: $bpm"
+            val x = event.values[0]
+            val y = event.values[1]
+            val z = event.values[2]
+
+            currentAccelX = x
+            currentAccelY = y
+            currentAccelZ = z
         }
     }
 
