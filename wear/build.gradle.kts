@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.healthmotion.wear"
+    namespace = "com.example.healthmotion"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.healthmotion.wear"
+        applicationId = "com.example.healthmotion"
         minSdk = 32
         targetSdk = 35
         versionCode = 1

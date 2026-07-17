@@ -1,6 +1,7 @@
 package com.example.healthmotion
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.wearable.MessageClient
@@ -16,6 +17,45 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
         setContentView(R.layout.activity_main)
 
         txtMessage = findViewById(R.id.txtMessage)
+
+        Wearable.getNodeClient(this)
+            .connectedNodes
+            .addOnSuccessListener { nodes ->
+
+                Log.d(
+                    "HEALTHMOTION_PHONE",
+                    "Nodos encontrados: ${nodes.size}"
+                )
+
+                for (node in nodes) {
+                    Log.d(
+                        "HEALTHMOTION_PHONE",
+                        "Nodo: ${node.displayName}"
+                    )
+                }
+            }
+
+        Wearable.getDataClient(this)
+//            .dataItems
+//            .addOnSuccessListener { dataItems ->
+//
+//                Log.d(
+//                    "HEALTHMOTION_PHONE",
+//                    "DataItems encontrados: ${dataItems.count}"
+//                )
+//            }
+
+        Wearable.getDataClient(this)
+            .addListener { dataEvents ->
+
+                for (event in dataEvents) {
+
+                    Log.d(
+                        "HEALTHMOTION_PHONE",
+                        "DataEvent recibido: ${event.dataItem.uri.path}"
+                    )
+                }
+            }
     }
 
     override fun onResume() {
@@ -31,6 +71,11 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
+
+        Log.d(
+            "HEALTHMOTION_PHONE",
+            "Mensaje recibido. Path: ${messageEvent.path}"
+        )
 
         runOnUiThread {
             txtMessage.text = String(messageEvent.data)
