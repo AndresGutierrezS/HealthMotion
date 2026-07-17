@@ -16,4 +16,10 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
+    <Button
+        android:id="@+id/btnLastMeasurement"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Última medición" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

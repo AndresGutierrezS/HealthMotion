@@ -9,16 +9,42 @@ import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataMapItem
+import android.widget.Button
 
 class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListener {
-
+    private lateinit var databaseHelper: DatabaseHelper
     private lateinit var txtMessage: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        databaseHelper =
+            DatabaseHelper(this)
+
         txtMessage = findViewById(R.id.txtMessage)
+
+        val btnLastMeasurement =
+            findViewById<Button>(
+                R.id.btnLastMeasurement
+            )
+
+
+        btnLastMeasurement.setOnClickListener {
+
+            val lastMeasurement =
+                databaseHelper.getLastMeasurement()
+
+
+            txtMessage.text =
+                lastMeasurement
+
+
+            Log.d(
+                "HEALTHMOTION_PHONE",
+                lastMeasurement
+            )
+        }
 
         Wearable.getNodeClient(this)
             .connectedNodes
@@ -78,6 +104,20 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
                                 """.trimIndent()
                             )
 
+                            databaseHelper.insertMeasurement(
+                                heartRate,
+                                steps,
+                                accelX,
+                                accelY,
+                                accelZ,
+                                System.currentTimeMillis()
+                            )
+
+
+                            Log.d(
+                                "HEALTHMOTION_PHONE",
+                                "Medición guardada en SQLite"
+                            )
 
                             runOnUiThread {
 
