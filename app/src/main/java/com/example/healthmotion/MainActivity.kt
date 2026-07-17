@@ -54,15 +54,44 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
                             val heartRate =
                                 dataMap.getInt("heartRate")
 
+                            val steps =
+                                dataMap.getInt("steps")
+
+                            val accelX =
+                                dataMap.getFloat("accelX")
+
+                            val accelY =
+                                dataMap.getFloat("accelY")
+
+                            val accelZ =
+                                dataMap.getFloat("accelZ")
+
+
                             Log.d(
                                 "HEALTHMOTION_PHONE",
-                                "Heart Rate recibido: $heartRate"
+                                """
+                                Heart Rate: $heartRate
+                                Steps: $steps
+                                Accel X: $accelX
+                                Accel Y: $accelY
+                                Accel Z: $accelZ
+                                """.trimIndent()
                             )
+
 
                             runOnUiThread {
 
                                 txtMessage.text =
-                                    "Heart Rate: $heartRate BPM"
+                                    """
+                                    Heart Rate: $heartRate BPM
+                                    
+                                    Steps: $steps
+                                    
+                                    Accelerometer:
+                                    X: ${"%.2f".format(accelX)}
+                                    Y: ${"%.2f".format(accelY)}
+                                    Z: ${"%.2f".format(accelZ)}
+                                    """.trimIndent()
                             }
                         }
                     }

@@ -1,22 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:padding="8dp">
+
 
     <TextView
         android:id="@+id/txtStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="HealthMotion Wear"
-        android:textSize="16sp" />
+        android:text="HealthMotion"
+        android:textSize="14sp" />
 
-    <Button
-        android:id="@+id/btnSend"
+
+    <TextView
+        android:id="@+id/txtHeartRate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enviar" />
+        android:text="HR: -- BPM"
+        android:textSize="12sp" />
+
+
+    <TextView
+        android:id="@+id/txtSteps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Steps: --"
+        android:textSize="12sp" />
+
+
+    <TextView
+        android:id="@+id/txtAccelerometer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ACC: -- -- --"
+        android:textSize="11sp" />
+
+
+    <Button
+        android:id="@+id/btnStart"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:text="Iniciar"
+        android:textSize="11sp" />
+
+
+    <Button
+        android:id="@+id/btnStop"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:text="Detener"
+        android:textSize="11sp" />
+
 
 </LinearLayout>
