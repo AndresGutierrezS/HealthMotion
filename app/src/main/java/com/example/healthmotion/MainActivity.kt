@@ -7,6 +7,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.DataMapItem
 
 class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListener {
 
@@ -36,24 +38,34 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
             }
 
         Wearable.getDataClient(this)
-//            .dataItems
-//            .addOnSuccessListener { dataItems ->
-//
-//                Log.d(
-//                    "HEALTHMOTION_PHONE",
-//                    "DataItems encontrados: ${dataItems.count}"
-//                )
-//            }
-
-        Wearable.getDataClient(this)
             .addListener { dataEvents ->
 
                 for (event in dataEvents) {
 
-                    Log.d(
-                        "HEALTHMOTION_PHONE",
-                        "DataEvent recibido: ${event.dataItem.uri.path}"
-                    )
+                    if (event.type == DataEvent.TYPE_CHANGED) {
+
+                        if (event.dataItem.uri.path == "/healthmotion_test") {
+
+                            val dataMap =
+                                DataMapItem
+                                    .fromDataItem(event.dataItem)
+                                    .dataMap
+
+                            val heartRate =
+                                dataMap.getInt("heartRate")
+
+                            Log.d(
+                                "HEALTHMOTION_PHONE",
+                                "Heart Rate recibido: $heartRate"
+                            )
+
+                            runOnUiThread {
+
+                                txtMessage.text =
+                                    "Heart Rate: $heartRate BPM"
+                            }
+                        }
+                    }
                 }
             }
     }
