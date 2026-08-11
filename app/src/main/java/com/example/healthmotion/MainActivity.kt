@@ -29,6 +29,11 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
                 R.id.btnLastMeasurement
             )
 
+        val btnHistory =
+            findViewById<Button>(
+                R.id.btnHistory
+            )
+
 
         btnLastMeasurement.setOnClickListener {
 
@@ -43,6 +48,20 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
             Log.d(
                 "HEALTHMOTION_PHONE",
                 lastMeasurement
+            )
+        }
+
+        btnHistory.setOnClickListener {
+
+            val history =
+                databaseHelper.getMeasurementsHistory()
+
+            txtMessage.text =
+                history
+
+            Log.d(
+                "HEALTHMOTION_PHONE",
+                history
             )
         }
 

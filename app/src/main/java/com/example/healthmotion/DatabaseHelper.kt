@@ -215,6 +215,104 @@ class DatabaseHelper(
         return result
     }
 
+    fun getMeasurementsHistory(): String {
+
+        val db = readableDatabase
+
+        val cursor = db.rawQuery(
+            """
+        SELECT *
+        FROM $TABLE_MEASUREMENTS
+        ORDER BY $COLUMN_ID DESC
+        LIMIT 20
+        """.trimIndent(),
+            null
+        )
+
+        val result = StringBuilder()
+
+        if (cursor.moveToFirst()) {
+
+            do {
+
+                val heartRate =
+                    cursor.getInt(
+                        cursor.getColumnIndexOrThrow(
+                            COLUMN_HEART_RATE
+                        )
+                    )
+
+                val steps =
+                    cursor.getInt(
+                        cursor.getColumnIndexOrThrow(
+                            COLUMN_STEPS
+                        )
+                    )
+
+                val accelX =
+                    cursor.getFloat(
+                        cursor.getColumnIndexOrThrow(
+                            COLUMN_ACCEL_X
+                        )
+                    )
+
+                val accelY =
+                    cursor.getFloat(
+                        cursor.getColumnIndexOrThrow(
+                            COLUMN_ACCEL_Y
+                        )
+                    )
+
+                val accelZ =
+                    cursor.getFloat(
+                        cursor.getColumnIndexOrThrow(
+                            COLUMN_ACCEL_Z
+                        )
+                    )
+
+                val timestamp =
+                    cursor.getLong(
+                        cursor.getColumnIndexOrThrow(
+                            COLUMN_TIMESTAMP
+                        )
+                    )
+
+                val date =
+                    java.text.SimpleDateFormat(
+                        "dd/MM/yyyy HH:mm:ss",
+                        java.util.Locale.getDefault()
+                    ).format(
+                        java.util.Date(timestamp)
+                    )
+
+                result.append(
+                    """
+                Heart Rate: $heartRate BPM
+                Steps: $steps
+                Accel:
+                X: $accelX
+                Y: $accelY
+                Z: $accelZ
+                Fecha: $date                
+                --------------------
+                
+                """.trimIndent()
+                )
+
+            } while (cursor.moveToNext())
+
+        } else {
+
+            result.append("Sin mediciones")
+
+        }
+
+        cursor.close()
+        db.close()
+
+        return result.toString()
+    }
+
     override fun onUpgrade(
         db: SQLiteDatabase,
         oldVersion: Int,
