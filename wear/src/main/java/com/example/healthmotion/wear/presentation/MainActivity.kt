@@ -15,8 +15,12 @@ import com.google.android.gms.wearable.Wearable
 import android.os.Handler
 import android.os.Looper
 import com.google.android.gms.wearable.Node
+import android.Manifest
+import android.content.pm.PackageManager
 
 class MainActivity : Activity(), SensorEventListener {
+
+    private val BODY_SENSOR_REQUEST = 100
 
     private lateinit var sensorManager: SensorManager
 
@@ -24,13 +28,13 @@ class MainActivity : Activity(), SensorEventListener {
     private var accelerometerSensor: Sensor? = null
     private var stepCounterSensor: Sensor? = null
 
-    private var currentHeartRate = 75
+    private var currentHeartRate = 0
 
     private var currentAccelX = 0f
     private var currentAccelY = 0f
     private var currentAccelZ = 0f
 
-    private var currentSteps = 5234
+    private var currentSteps = 0
 
     private val handler =
         Handler(Looper.getMainLooper())
@@ -57,6 +61,43 @@ class MainActivity : Activity(), SensorEventListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        Log.d(
+            "HEALTHMOTION_WEAR",
+            "BODY_SENSORS = ${
+                checkSelfPermission(
+                    Manifest.permission.BODY_SENSORS
+                ) == PackageManager.PERMISSION_GRANTED
+            }"
+        )
+
+        if (
+            checkSelfPermission(
+                android.Manifest.permission.ACTIVITY_RECOGNITION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+
+            requestPermissions(
+                arrayOf(
+                    android.Manifest.permission.ACTIVITY_RECOGNITION
+                ),
+                101
+            )
+        }
+
+        if (
+            checkSelfPermission(
+                Manifest.permission.BODY_SENSORS
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+
+            requestPermissions(
+                arrayOf(
+                    Manifest.permission.BODY_SENSORS
+                ),
+                BODY_SENSOR_REQUEST
+            )
+        }
 
         val txtStatus = findViewById<TextView>(R.id.txtStatus)
 
@@ -90,12 +131,30 @@ class MainActivity : Activity(), SensorEventListener {
                 Sensor.TYPE_STEP_COUNTER
             )
 
+        Log.d(
+            "HEALTHMOTION_WEAR",
+            "Sensor pasos: ${stepCounterSensor?.name}"
+        )
+
+        Log.d(
+            "HEALTHMOTION_WEAR",
+            "Vendor: ${stepCounterSensor?.vendor}"
+        )
+
+        Log.d(
+            "HEALTHMOTION_WEAR",
+            "Type: ${stepCounterSensor?.type}"
+        )
+
         if (heartRateSensor != null) {
 
-            currentHeartRate = 75
+//            currentHeartRate = 75
+//
+//             txtHeartRate.text =
+//                "Heart Rate: $currentHeartRate BPM"
 
-             txtHeartRate.text =
-                "Heart Rate: $currentHeartRate BPM"
+            txtHeartRate.text =
+                "Heart Rate: -- BPM"
 
             Log.d(
                 "HEALTHMOTION_WEAR",
@@ -144,6 +203,12 @@ class MainActivity : Activity(), SensorEventListener {
             Log.d(
                 "HEALTHMOTION_WEAR",
                 "Step Counter disponible"
+            )
+
+            sensorManager.registerListener(
+                this,
+                stepCounterSensor,
+                SensorManager.SENSOR_DELAY_NORMAL
             )
 
         } else {
@@ -297,14 +362,19 @@ class MainActivity : Activity(), SensorEventListener {
 
     override fun onSensorChanged(event: SensorEvent?) {
 
+//        Log.d(
+//            "HEALTHMOTION_WEAR",
+//            "Sensor detectado: ${event?.sensor?.type}"
+//        )
+
         if (event?.sensor?.type == Sensor.TYPE_HEART_RATE) {
 
             val bpm = event.values[0]
 
-            Log.d(
-                "HEALTHMOTION_WEAR",
-                "BPM: $bpm"
-            )
+//            Log.d(
+//                "HEALTHMOTION_WEAR",
+//                "BPM: $bpm"
+//            )
 
             currentHeartRate = bpm.toInt()
 
@@ -337,11 +407,68 @@ class MainActivity : Activity(), SensorEventListener {
                         "Y:${"%.1f".format(currentAccelY)} " +
                         "Z:${"%.1f".format(currentAccelZ)}"
         }
+
+        if (event?.sensor?.type == Sensor.TYPE_STEP_COUNTER) {
+
+            Log.d(
+                "HEALTHMOTION_WEAR",
+                "Nombre sensor pasos: ${stepCounterSensor?.name}"
+            )
+
+            currentSteps = event.values[0].toInt()
+
+            Log.d(
+                "HEALTHMOTION_WEAR",
+                "Steps: $currentSteps"
+            )
+
+            val txtSteps =
+                findViewById<TextView>(
+                    R.id.txtSteps
+                )
+
+            txtSteps.text =
+                "Steps: $currentSteps"
+        }
     }
 
     override fun onAccuracyChanged(
         sensor: Sensor?,
         accuracy: Int
     ) {
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(
+            requestCode,
+            permissions,
+            grantResults
+        )
+
+        if (requestCode == BODY_SENSOR_REQUEST) {
+
+            if (
+                grantResults.isNotEmpty() &&
+                grantResults[0] ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+
+                Log.d(
+                    "HEALTHMOTION_WEAR",
+                    "BODY_SENSORS concedido"
+                )
+
+            } else {
+
+                Log.e(
+                    "HEALTHMOTION_WEAR",
+                    "BODY_SENSORS denegado"
+                )
+            }
+        }
     }
 }
