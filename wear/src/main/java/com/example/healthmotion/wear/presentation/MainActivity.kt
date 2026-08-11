@@ -17,8 +17,13 @@ import android.os.Looper
 import com.google.android.gms.wearable.Node
 import android.Manifest
 import android.content.pm.PackageManager
+import com.google.android.gms.wearable.MessageClient
+import com.google.android.gms.wearable.MessageEvent
 
-class MainActivity : Activity(), SensorEventListener {
+
+class MainActivity : Activity(),
+    SensorEventListener,
+    MessageClient.OnMessageReceivedListener {
 
     private val BODY_SENSOR_REQUEST = 100
 
@@ -238,6 +243,22 @@ class MainActivity : Activity(), SensorEventListener {
 
         btnStart.setOnClickListener {
 
+            startMonitoring()
+        }
+
+
+        btnStop.setOnClickListener {
+
+            stopMonitoring()
+        }
+
+
+    }
+
+    private fun startMonitoring() {
+
+        if (!monitoring) {
+
             monitoring = true
 
             handler.post(sendRunnable)
@@ -247,9 +268,12 @@ class MainActivity : Activity(), SensorEventListener {
                 "Monitoreo iniciado"
             )
         }
+    }
 
 
-        btnStop.setOnClickListener {
+    private fun stopMonitoring() {
+
+        if (monitoring) {
 
             monitoring = false
 
@@ -262,10 +286,7 @@ class MainActivity : Activity(), SensorEventListener {
                 "Monitoreo detenido"
             )
         }
-
-
     }
-
 
     private fun sendSensorData() {
 
@@ -468,6 +489,53 @@ class MainActivity : Activity(), SensorEventListener {
                     "HEALTHMOTION_WEAR",
                     "BODY_SENSORS denegado"
                 )
+            }
+        }
+    }
+
+    override fun onResume() {
+
+        super.onResume()
+
+        Wearable.getMessageClient(this)
+            .addListener(this)
+    }
+
+
+    override fun onPause() {
+
+        super.onPause()
+
+        Wearable.getMessageClient(this)
+            .removeListener(this)
+    }
+
+
+    override fun onMessageReceived(
+        messageEvent: MessageEvent
+    ) {
+
+        Log.d(
+            "HEALTHMOTION_WEAR",
+            "Comando recibido: ${messageEvent.path}"
+        )
+
+        when (messageEvent.path) {
+
+            "/healthmotion_start" -> {
+
+                runOnUiThread {
+
+                    startMonitoring()
+                }
+            }
+
+            "/healthmotion_stop" -> {
+
+                runOnUiThread {
+
+                    stopMonitoring()
+                }
             }
         }
     }

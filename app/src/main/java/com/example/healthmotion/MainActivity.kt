@@ -11,9 +11,13 @@ import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataMapItem
 import android.widget.Button
 
-class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListener {
+class MainActivity : AppCompatActivity(),
+    MessageClient.OnMessageReceivedListener {
+
     private lateinit var databaseHelper: DatabaseHelper
     private lateinit var txtMessage: TextView
+
+    private var remoteMonitoring = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,7 +26,13 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
         databaseHelper =
             DatabaseHelper(this)
 
-        txtMessage = findViewById(R.id.txtMessage)
+        txtMessage =
+            findViewById(R.id.txtMessage)
+
+        val btnRemoteMonitoring =
+            findViewById<Button>(
+                R.id.btnRemoteMonitoring
+            )
 
         val btnLastMeasurement =
             findViewById<Button>(
@@ -35,21 +45,37 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
             )
 
 
+        btnRemoteMonitoring.setOnClickListener {
+
+            if (!remoteMonitoring) {
+
+                sendMonitoringCommand(
+                    "/healthmotion_start"
+                )
+
+            } else {
+
+                sendMonitoringCommand(
+                    "/healthmotion_stop"
+                )
+            }
+        }
+
+
         btnLastMeasurement.setOnClickListener {
 
             val lastMeasurement =
                 databaseHelper.getLastMeasurement()
 
-
             txtMessage.text =
                 lastMeasurement
-
 
             Log.d(
                 "HEALTHMOTION_PHONE",
                 lastMeasurement
             )
         }
+
 
         btnHistory.setOnClickListener {
 
@@ -65,6 +91,7 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
             )
         }
 
+
         Wearable.getNodeClient(this)
             .connectedNodes
             .addOnSuccessListener { nodes ->
@@ -75,6 +102,7 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
                 )
 
                 for (node in nodes) {
+
                     Log.d(
                         "HEALTHMOTION_PHONE",
                         "Nodo: ${node.displayName}"
@@ -82,34 +110,53 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
                 }
             }
 
+
         Wearable.getDataClient(this)
             .addListener { dataEvents ->
 
                 for (event in dataEvents) {
 
-                    if (event.type == DataEvent.TYPE_CHANGED) {
+                    if (
+                        event.type ==
+                        DataEvent.TYPE_CHANGED
+                    ) {
 
-                        if (event.dataItem.uri.path == "/healthmotion_test") {
+                        if (
+                            event.dataItem.uri.path ==
+                            "/healthmotion_test"
+                        ) {
 
                             val dataMap =
                                 DataMapItem
-                                    .fromDataItem(event.dataItem)
+                                    .fromDataItem(
+                                        event.dataItem
+                                    )
                                     .dataMap
 
                             val heartRate =
-                                dataMap.getInt("heartRate")
+                                dataMap.getInt(
+                                    "heartRate"
+                                )
 
                             val steps =
-                                dataMap.getInt("steps")
+                                dataMap.getInt(
+                                    "steps"
+                                )
 
                             val accelX =
-                                dataMap.getFloat("accelX")
+                                dataMap.getFloat(
+                                    "accelX"
+                                )
 
                             val accelY =
-                                dataMap.getFloat("accelY")
+                                dataMap.getFloat(
+                                    "accelY"
+                                )
 
                             val accelZ =
-                                dataMap.getFloat("accelZ")
+                                dataMap.getFloat(
+                                    "accelZ"
+                                )
 
 
                             Log.d(
@@ -122,6 +169,7 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
                                 Accel Z: $accelZ
                                 """.trimIndent()
                             )
+
 
                             databaseHelper.insertMeasurement(
                                 heartRate,
@@ -137,6 +185,7 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
                                 "HEALTHMOTION_PHONE",
                                 "Medición guardada en SQLite"
                             )
+
 
                             runOnUiThread {
 
@@ -158,19 +207,101 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
             }
     }
 
+
+    private fun sendMonitoringCommand(
+        path: String
+    ) {
+
+        Wearable.getNodeClient(this)
+            .connectedNodes
+            .addOnSuccessListener { nodes ->
+
+                if (nodes.isEmpty()) {
+
+                    Log.e(
+                        "HEALTHMOTION_PHONE",
+                        "No hay reloj conectado"
+                    )
+
+                    return@addOnSuccessListener
+                }
+
+                for (node in nodes) {
+
+                    Wearable.getMessageClient(this)
+                        .sendMessage(
+                            node.id,
+                            path,
+                            ByteArray(0)
+                        )
+                        .addOnSuccessListener {
+
+                            if (
+                                path ==
+                                "/healthmotion_start"
+                            ) {
+
+                                remoteMonitoring = true
+
+                                findViewById<Button>(
+                                    R.id.btnRemoteMonitoring
+                                ).text =
+                                    "Detener monitoreo"
+
+                                Log.d(
+                                    "HEALTHMOTION_PHONE",
+                                    "Monitoreo iniciado remotamente"
+                                )
+
+                            } else {
+
+                                remoteMonitoring = false
+
+                                findViewById<Button>(
+                                    R.id.btnRemoteMonitoring
+                                ).text =
+                                    "Iniciar monitoreo"
+
+                                Log.d(
+                                    "HEALTHMOTION_PHONE",
+                                    "Monitoreo detenido remotamente"
+                                )
+                            }
+                        }
+                        .addOnFailureListener {
+
+                            Log.e(
+                                "HEALTHMOTION_PHONE",
+                                "Error enviando comando",
+                                it
+                            )
+                        }
+                }
+            }
+    }
+
+
     override fun onResume() {
+
         super.onResume()
+
         Wearable.getMessageClient(this)
             .addListener(this)
     }
 
+
     override fun onPause() {
+
         super.onPause()
+
         Wearable.getMessageClient(this)
             .removeListener(this)
     }
 
-    override fun onMessageReceived(messageEvent: MessageEvent) {
+
+    override fun onMessageReceived(
+        messageEvent: MessageEvent
+    ) {
 
         Log.d(
             "HEALTHMOTION_PHONE",
@@ -178,7 +309,9 @@ class MainActivity : AppCompatActivity(), MessageClient.OnMessageReceivedListene
         )
 
         runOnUiThread {
-            txtMessage.text = String(messageEvent.data)
+
+            txtMessage.text =
+                String(messageEvent.data)
         }
     }
 }
